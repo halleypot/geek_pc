@@ -1,6 +1,6 @@
 function NoMatch () {
   return (
-    <div classname={'noMatch'}>
+    <div className={'noMatch'}>
       <h1>No Match</h1>
     </div>
   )

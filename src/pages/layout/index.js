@@ -1,6 +1,6 @@
-function Layout () {
+function Layout (props) {
   return (
-    <div classname={'layout'}>
+    <div className={'layout'}>
       <h1>Layout</h1>
     </div>
   )

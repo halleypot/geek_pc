@@ -8,16 +8,19 @@ import {
   Route,
   Switch
 } from 'react-router-dom'
+// import authorization component
+import AuthRoute from './components/authRoute'
 
 function App () {
   return (
     <Router>
       <div className='app'>
         <Switch>
-          <Redirect from='/' to='/home'></Redirect>
-          <Route path={'/home'} component={Layout}></Route>
-          <Route path={'/login'} component={Login}></Route>
-          <Route component={NoMatch}></Route>
+          <Redirect exact from='/' to='/home'></Redirect>
+          {/* <Route path={'/home'} component={Layout}></Route> */}
+          <AuthRoute path='/home' component={Layout} />
+          <Route path='/login' component={Login} />
+          <Route component={NoMatch} />
         </Switch>
       </div>
     </Router>
