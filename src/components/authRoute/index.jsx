@@ -7,7 +7,7 @@ function AuthRoute ({ component: Component, ...rest }) {
       {...rest}
       render={props => {
         // if no token
-        console.log('token:', !isAuth())
+        // console.log('token:', !isAuth())
         if (!isAuth()) {
           return (
             <Redirect

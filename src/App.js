@@ -1,7 +1,9 @@
 import './App.scss'
 import NoMatch from './pages/404'
-import Layout from './pages/layout'
+import Layouts from './pages/layout'
 import Login from './pages/login'
+// testing component
+
 import {
   BrowserRouter as Router,
   Redirect,
@@ -18,7 +20,7 @@ function App () {
         <Switch>
           <Redirect exact from='/' to='/home'></Redirect>
           {/* <Route path={'/home'} component={Layout}></Route> */}
-          <AuthRoute path='/home' component={Layout} />
+          <AuthRoute path='/home' component={Layouts} />
           <Route path='/login' component={Login} />
           <Route component={NoMatch} />
         </Switch>
