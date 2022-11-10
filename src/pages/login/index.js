@@ -16,6 +16,7 @@ function Login () {
     console.log('Success:', values)
     try {
       await dispatch(loginAction(values))
+      // return to the previous page
       history.replace(location.state?.from || '/home')
     } catch (error) {
       // console.log(error.message || 'incorrect number')

@@ -1,7 +1,5 @@
+import style from './index.module.scss'
+
 export const Home = () => {
-  return (
-    <div>
-      <h1>Home</h1>
-    </div>
-  )
+  return <div className={style.root}></div>
 }

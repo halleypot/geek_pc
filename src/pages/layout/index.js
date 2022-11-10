@@ -11,17 +11,39 @@ import {
   LogoutOutlined
 } from '@ant-design/icons'
 import style from './index.module.scss'
-import { Route, Link, useLocation } from 'react-router-dom'
+import { Route, Link, useLocation, useHistory } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { useEffect } from 'react'
+import { userInfoAction, logoutAction } from '@/store/actions'
 
 const { Header, Sider } = Layout
 
 function Layouts () {
   const location = useLocation()
+  const dispatch = useDispatch()
+  const history = useHistory()
 
+  // send use info request
+  useEffect(() => {
+    try {
+      dispatch(userInfoAction())
+    } catch (error) {
+      Promise.reject(error || "failed to request user's information")
+    }
+  }, [dispatch])
+
+  const userInfo = useSelector(state => state.user)
+  // console.log(userInfo)
   const currentKey = location.pathname.startsWith('/home/publish')
     ? '/home/publish'
     : location.pathname
-  console.log(currentKey)
+  // console.log(currentKey)
+
+  // log out event
+  const confirmExit = () => {
+    dispatch(logoutAction())
+    history.push('/login')
+  }
 
   return (
     <Layout className={style.root}>
@@ -30,9 +52,15 @@ function Layouts () {
         <div className='logo' />
         {/* + 用户信息 */}
         <div className='user-info'>
-          <span className='user-name'>user.name</span>
+          <span className='user-name'>{userInfo.name}</span>
           <span className='user-logout'>
-            <Popconfirm title='是否确认退出？' okText='退出' cancelText='取消'>
+            {/* logout component */}
+            <Popconfirm
+              title='是否确认退出？'
+              okText='退出'
+              cancelText='取消'
+              onConfirm={confirmExit}
+            >
               <LogoutOutlined /> 退出
             </Popconfirm>
           </span>

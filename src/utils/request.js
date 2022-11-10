@@ -1,16 +1,41 @@
 import axios from 'axios'
+import store from '@/store'
+import { customHistory } from '@/utils/history'
+import { message } from 'antd'
 
 const http = axios.create({
-  baseURL: 'http://geek.itheima.net'
+  baseURL: 'http://geek.itheima.net/v1_0'
 })
 
-// add response interceptor
+// add request interceptor
+http.interceptors.request.use(config => {
+  // config request header with token
+  const { login: token } = store.getState()
 
+  config.headers.Authorization = `Bearer ${token}`
+  return config
+}, null)
+
+// add response interceptor
 http.interceptors.response.use(
   res => {
     return res.data.data
   },
   err => {
+    if (!err.response) {
+      message.error('connection is busy. please try later')
+      return Promise.reject(err)
+    }
+
+    if (err.response.status === 401) {
+      customHistory.push({
+        pathname: '/login',
+        state: {
+          from: customHistory.location.pathname
+        }
+      })
+    }
+
     return Promise.reject(err)
   }
 )
