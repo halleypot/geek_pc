@@ -1,7 +1,7 @@
 // children route components
-import { Home } from '../home'
-import { Article } from '../article'
-import { Publish } from '../publish'
+import { Home } from '@/pages/home'
+import { Article } from '@/pages/article'
+import { Publish } from '@/pages/publish'
 
 import { Layout, Menu, Popconfirm } from 'antd'
 import {
@@ -87,6 +87,7 @@ function Layouts () {
             </Menu.Item>
           </Menu>
         </Sider>
+        {/* 右侧子页面内容 */}
         <Layout className='layout-content' style={{ padding: 20 }}>
           <Route exact path={'/home'} component={Home} />
           <Route path={'/home/article'} component={Article} />

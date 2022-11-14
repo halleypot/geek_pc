@@ -2,6 +2,7 @@ import axios from 'axios'
 import store from '@/store'
 import { customHistory } from '@/utils/history'
 import { message } from 'antd'
+import { logoutAction } from '@/store/actions'
 
 const http = axios.create({
   baseURL: 'http://geek.itheima.net/v1_0'
@@ -28,11 +29,16 @@ http.interceptors.response.use(
     }
 
     if (err.response.status === 401) {
-      customHistory.push({
-        pathname: '/login',
-        state: {
-          from: customHistory.location.pathname
-        }
+      message.warning(err.response.data?.message, 1, () => {
+        // delete token
+        store.dispatch(logoutAction())
+        // push into login page
+        customHistory.push({
+          pathname: '/login',
+          state: {
+            from: customHistory.location.pathname
+          }
+        })
       })
     }
 
