@@ -3,7 +3,8 @@ import { getUserInfo as userInfoAction } from './user'
 import {
   getChannel as getChannelAction,
   getArticle as getArticleAction,
-  deleteArtAction
+  deleteArtAction,
+  postArticleAction
 } from './article'
 
 export {
@@ -12,5 +13,6 @@ export {
   logoutAction,
   getChannelAction,
   getArticleAction,
-  deleteArtAction
+  deleteArtAction,
+  postArticleAction
 }

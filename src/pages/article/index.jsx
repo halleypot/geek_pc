@@ -6,7 +6,6 @@ import {
   Button,
   Radio,
   DatePicker,
-  Select,
   Tag,
   Space,
   Table,
@@ -24,13 +23,9 @@ import locale from 'antd/es/date-picker/locale/zh_CN'
 import img404 from '@/assets/error.png'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect, useRef } from 'react'
-import {
-  getChannelAction,
-  getArticleAction,
-  deleteArtAction
-} from '@/store/actions'
+import { getArticleAction, deleteArtAction } from '@/store/actions'
+import Channel from '@/components/channels'
 
-const { Option } = Select
 const { RangePicker } = DatePicker
 const { confirm } = Modal
 // handling with article status
@@ -115,16 +110,10 @@ export const Article = () => {
 
   const dispatch = useDispatch()
   useEffect(() => {
-    // request channels list
-    dispatch(getChannelAction())
     // get article list
     dispatch(getArticleAction({}))
   }, [dispatch])
 
-  // get channels list
-  const {
-    article: { channelsList }
-  } = useSelector(state => state)
   // console.log(channelsList)
 
   // table-rendering data source
@@ -215,20 +204,16 @@ export const Article = () => {
           </Form.Item>
           {/* channels selected option */}
           <Form.Item label='频道' name='channel_id'>
-            <Select placeholder='请选择文章频道' style={{ width: 120 }}>
-              {/* <Option value='jack'>Jack</Option>
-              <Option value='lucy'>Lucy</Option> */}
-              {channelsList.map(item => (
-                <Option key={item.id} value={item.id}>
-                  {item.name}
-                </Option>
-              ))}
-            </Select>
+            <Channel width={{ width: 300 }} />
           </Form.Item>
 
           {/* 日期选择 */}
           <Form.Item label='日期' name='date'>
-            <RangePicker locale={locale} format='YYYY-MM-DD'></RangePicker>
+            <RangePicker
+              style={{ width: 300 }}
+              locale={locale}
+              format='YYYY-MM-DD'
+            ></RangePicker>
           </Form.Item>
           {/* 提交按钮 */}
           <Form.Item>

@@ -41,3 +41,9 @@ export const deleteArtAction = (id, params) => {
     dispatch(getArticle(params))
   }
 }
+
+export const postArticleAction = (isDraft = false, data) => {
+  return async () => {
+    await request.post('mp/articles?draft=' + isDraft, data)
+  }
+}
