@@ -7,7 +7,8 @@ import {
   Input,
   Upload,
   Space,
-  message
+  message,
+  Spin
 } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { Link, useHistory, useParams } from 'react-router-dom'
@@ -18,15 +19,20 @@ import 'react-quill/dist/quill.snow.css'
 import Channel from '@/components/channels'
 
 import styles from './index.module.scss'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { postArticleAction } from '@/store/actions'
+import request from '@/utils/request'
 
 export const Publish = () => {
   // store filelist when switching btw 1 image and 3 images
   const fileListRef = useRef([])
   const dispatch = useDispatch()
   const history = useHistory()
+  // create form instance
+  const [formInstance] = Form.useForm()
+  // 管控Loading status,
+  const [loading, setLoading] = useState(false)
 
   // upload image(s)： change the component inot controlled
   // params @fileList, store images array [{url: 'url'}, ...]
@@ -70,12 +76,58 @@ export const Publish = () => {
     multiple: maxNum > 1
   }
 
+  // 通过路径参数，获取article id,
   const { articleId } = useParams()
+  const isEdit = !!articleId
+  useEffect(() => {
+    // 如果是非编辑状体，则清空表单
+    if (!isEdit) {
+      formInstance.resetFields()
+      setFileList([])
+      fileListRef.current = []
+    }
+    const loadArticle = async () => {
+      // if no articleId, do nothing
+      if (!isEdit) return setLoading(false)
+
+      // editing status，if articleId exits
+      setLoading(true)
+      const res = await request.get('mp/articles/' + articleId)
+      setLoading(false)
+      const {
+        id,
+        channel_id,
+        title,
+        content,
+        cover: { type, images }
+      } = res
+
+      const formData = {
+        id,
+        channel_id,
+        title,
+        content,
+        type
+      }
+      // 回填数据到表单
+      formInstance.setFieldsValue(formData)
+      // 回填图片 [{url:'url'}]
+      const imgList = images.map(file => ({ url: file }))
+      setFileList(imgList)
+      // 控制最大上传图片数量
+      setMaxNum(type)
+      // 存储图片列表对象
+      fileListRef.current = imgList
+    }
+    loadArticle()
+  }, [articleId, formInstance, isEdit])
 
   // to post an article or save as draft, determined by @params isDraft
   // @params isDraft true: save as draft
-  const postArticle = (isDraft = false, type, rest) => {
+  const postArticle = (isDraft = false, values) => {
     //  图片数量必须与所选张数一致
+    const { type, ...rest } = values
+
     if (type !== fileList.length) {
       return message.error('图片数量必须与所选张数一致')
     }
@@ -90,8 +142,10 @@ export const Publish = () => {
       }
     }
 
+    if (isEdit) data.id = articleId
+
     try {
-      dispatch(postArticleAction(isDraft, data))
+      dispatch(postArticleAction(isDraft, data, isEdit))
       const txt = isDraft
         ? 'successfully save your article as draft'
         : 'successfully post your article'
@@ -104,108 +158,119 @@ export const Publish = () => {
     }
   }
 
-  // create form instance
-  const [formInstance] = Form.useForm()
+  const saveAsDraft = async () => {
+    // console.log(formInstance.getFieldsValue(true))
+    try {
+      // 表单验证，成功返回表单数据
+      const values = await formInstance.validateFields()
 
-  const saveAsDraft = () => {
-    console.log(formInstance.getFieldsValue(true))
-    const { type, ...rest } = formInstance.getFieldsValue(true)
-
-    postArticle(true, type, rest)
+      postArticle(true, values)
+    } catch (error) {
+      message.error(error)
+      Promise.reject(error)
+    }
   }
 
-  const onFinish = ({ type, ...rest }) => {
+  const onFinish = values => {
     // post an article
-    postArticle(false, type, rest)
+    postArticle(false, values)
   }
+
   return (
     <div className={styles.root}>
-      <Card
-        title={
-          <Breadcrumb separator='>'>
-            <Breadcrumb.Item>
-              <Link to='/home'>首页</Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>发布文章</Breadcrumb.Item>
-          </Breadcrumb>
-        }
-      >
-        <Form
-          labelCol={{ span: 4 }}
-          wrapperCol={{ span: 16 }}
-          initialValues={{ type: 1, content: '' }}
-          onFinish={onFinish}
-          form={formInstance}
+      <Spin size='large' spinning={loading} tip='loading loading '>
+        <Card
+          title={
+            <Breadcrumb separator='>'>
+              <Breadcrumb.Item>
+                <Link to='/home'>首页</Link>
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>
+                {articleId ? '编辑' : '发布'}文章
+              </Breadcrumb.Item>
+            </Breadcrumb>
+          }
         >
-          <Form.Item
-            label='标题'
-            name='title'
-            rules={[{ required: true, message: '请输入文章标题' }]}
+          <Form
+            labelCol={{ span: 4 }}
+            wrapperCol={{ span: 16 }}
+            initialValues={{ type: 1, content: '' }}
+            onFinish={onFinish}
+            form={formInstance}
           >
-            <Input placeholder='请输入文章标题' style={{ width: 400 }} />
-          </Form.Item>
-          <Form.Item
-            label='频道'
-            name='channel_id'
-            rules={[{ required: true, message: '请选择文章频道' }]}
-          >
-            {/* 导入频道组件 */}
-            {/* <Select placeholder='请选择文章频道' style={{ width: 400 }}>
+            <Form.Item
+              label='标题'
+              name='title'
+              rules={[{ required: true, message: '请输入文章标题' }]}
+            >
+              <Input placeholder='请输入文章标题' style={{ width: 400 }} />
+            </Form.Item>
+            <Form.Item
+              label='频道'
+              name='channel_id'
+              rules={[{ required: true, message: '请选择文章频道' }]}
+            >
+              {/* 导入频道组件 */}
+              {/* <Select placeholder='请选择文章频道' style={{ width: 400 }}>
               <Option value={0}>推荐</Option>
             </Select> */}
-            <Channel width={{ width: 400 }} />
-          </Form.Item>
-          {/* 图片数量选择 */}
-          <Form.Item label='封面'>
-            <Form.Item name='type'>
-              <Radio.Group value={maxNum} onChange={changeImgNum}>
-                <Radio value={1}>单图</Radio>
-                <Radio value={3}>三图</Radio>
-                <Radio value={0}>无图</Radio>
-                {/* <Radio value={-1}>自动</Radio> */}
-              </Radio.Group>
+              <Channel width={{ width: 400 }} />
             </Form.Item>
-            {/* 上传图片组件 */}
-            {maxNum > 0 && (
-              <Upload
-                name='image'
-                listType='picture-card'
-                className='avatar-uploader'
-                showUploadList
-                fileList={fileList}
-                {...imgUploadProps}
-                maxCount={maxNum}
-              >
-                {/* 上传图标 */}
-                <div style={{ marginTop: 8 }}>
-                  <PlusOutlined />
-                </div>
-              </Upload>
-            )}
-          </Form.Item>
-          {/* 富文本区域 */}
-          <Form.Item
-            label='内容'
-            name='content'
-            rules={[{ required: true, message: '请输入文章内容' }]}
-          >
-            {/* 内容 */}
-            <ReactQuill theme='snow' placeholder='please input your comments' />
-          </Form.Item>
+            {/* 图片数量选择 */}
+            <Form.Item label='封面'>
+              <Form.Item name='type'>
+                <Radio.Group value={maxNum} onChange={changeImgNum}>
+                  <Radio value={1}>单图</Radio>
+                  <Radio value={3}>三图</Radio>
+                  <Radio value={0}>无图</Radio>
+                  {/* <Radio value={-1}>自动</Radio> */}
+                </Radio.Group>
+              </Form.Item>
+              {/* 上传图片组件 */}
+              {maxNum > 0 && (
+                <Upload
+                  name='image'
+                  listType='picture-card'
+                  className='avatar-uploader'
+                  showUploadList
+                  fileList={fileList}
+                  {...imgUploadProps}
+                  maxCount={maxNum}
+                >
+                  {/* 上传图标 */}
+                  <div style={{ marginTop: 8 }}>
+                    <PlusOutlined />
+                  </div>
+                </Upload>
+              )}
+            </Form.Item>
+            {/* 富文本区域 */}
+            <Form.Item
+              label='内容'
+              name='content'
+              rules={[{ required: true, message: '请输入文章内容' }]}
+            >
+              {/* 内容 */}
+              <ReactQuill
+                theme='snow'
+                placeholder='please input your comments'
+              />
+            </Form.Item>
 
-          {/* 发布 & 存草稿 按钮 */}
-          <Form.Item wrapperCol={{ offset: 4 }}>
-            <Space>
-              <Button size='large' type='primary' htmlType='submit'>
-                发布文章
-              </Button>
-              <Button size='large' onClick={saveAsDraft}>
-                存入草稿
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
+            {/* 发布 & 存草稿 按钮 */}
+            <Form.Item wrapperCol={{ offset: 4 }}>
+              <Space>
+                <Button size='large' type='primary' htmlType='submit'>
+                  {articleId ? '编辑' : '发布'}文章
+                </Button>
+                <Button size='large' onClick={saveAsDraft}>
+                  存入草稿
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Spin>
     </div>
   )
 }

@@ -42,8 +42,12 @@ export const deleteArtAction = (id, params) => {
   }
 }
 
-export const postArticleAction = (isDraft = false, data) => {
+export const postArticleAction = (isDraft = false, data, isEdit) => {
   return async () => {
-    await request.post('mp/articles?draft=' + isDraft, data)
+    if (isEdit) {
+      await request.put(`/mp/articles/${data.id}?draft=${isDraft}`, data)
+    } else {
+      await request.post('/mp/articles?draft=' + isDraft, data)
+    }
   }
 }

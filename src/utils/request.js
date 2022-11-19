@@ -4,8 +4,10 @@ import { customHistory } from '@/utils/history'
 import { message } from 'antd'
 import { logoutAction } from '@/store/actions'
 
+const baseURL = process.env.REACT_APP_URL
+console.log(process.env)
 const http = axios.create({
-  baseURL: 'http://geek.itheima.net/v1_0'
+  baseURL: baseURL
 })
 
 // add request interceptor
@@ -13,7 +15,10 @@ http.interceptors.request.use(config => {
   // config request header with token
   const { login: token } = store.getState()
 
-  config.headers.Authorization = `Bearer ${token}`
+  // 除了登录请求外，其他请求统一添加 token
+  if (!config.url.startsWith('/authorizations')) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
   return config
 }, null)
 

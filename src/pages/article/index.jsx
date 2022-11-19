@@ -10,7 +10,8 @@ import {
   Space,
   Table,
   Modal,
-  message
+  message,
+  Spin
 } from 'antd'
 import {
   EditOutlined,
@@ -22,7 +23,7 @@ import locale from 'antd/es/date-picker/locale/zh_CN'
 // import 404 image
 import img404 from '@/assets/error.png'
 import { useDispatch, useSelector } from 'react-redux'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getArticleAction, deleteArtAction } from '@/store/actions'
 import Channel from '@/components/channels'
 
@@ -38,6 +39,8 @@ const articleStatus = {
 
 export const Article = () => {
   const history = useHistory()
+  // control loading status
+  const [loading, setLoading] = useState(false)
   // 表格columns配置
   const columns = [
     // 第一列第一栏
@@ -111,7 +114,14 @@ export const Article = () => {
   const dispatch = useDispatch()
   useEffect(() => {
     // get article list
-    dispatch(getArticleAction({}))
+    setLoading(true)
+    try {
+      dispatch(getArticleAction({}))
+    } catch (error) {
+      message.error(error || 'fail to laoding articles')
+    } finally {
+      setLoading(false)
+    }
   }, [dispatch])
 
   // console.log(channelsList)
@@ -122,6 +132,7 @@ export const Article = () => {
   // filter table data
   const onFilter = value => {
     // filter article list
+    setLoading(true)
     const { status, channel_id, date } = value
     const params = { channel_id }
 
@@ -138,6 +149,8 @@ export const Article = () => {
       paramsRef.current = params
     } catch (error) {
       Promise.reject(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -146,7 +159,7 @@ export const Article = () => {
   // change current page number
   const changePage = (page, pageSize) => {
     // console.log(page, pageSize)
-
+    setLoading(true)
     try {
       dispatch(
         getArticleAction({
@@ -158,6 +171,8 @@ export const Article = () => {
       paramsRef.current = { ...paramsRef.current, page, per_page: pageSize }
     } catch (error) {
       Promise.reject(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -180,63 +195,65 @@ export const Article = () => {
   return (
     <>
       {/* 导航头部 */}
-      <Card
-        title={
-          <Breadcrumb separator='>'>
-            <Breadcrumb.Item>
-              <Link to='/home'>首页</Link>
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>内容管理</Breadcrumb.Item>
-          </Breadcrumb>
-        }
-        style={{ marginBottom: 20 }}
-      >
-        {/* 筛选状态按钮 */}
-        <Form initialValues={{ status: -1 }} onFinish={onFilter}>
-          <Form.Item label='状态' name='status'>
-            <Radio.Group>
-              <Radio value={-1}>全部</Radio>
-              <Radio value={0}>草稿</Radio>
-              <Radio value={1}>待审核</Radio>
-              <Radio value={2}>审核通过</Radio>
-              <Radio value={3}>审核失败</Radio>
-            </Radio.Group>
-          </Form.Item>
-          {/* channels selected option */}
-          <Form.Item label='频道' name='channel_id'>
-            <Channel width={{ width: 300 }} />
-          </Form.Item>
+      <Spin spinning={loading}>
+        <Card
+          title={
+            <Breadcrumb separator='>'>
+              <Breadcrumb.Item>
+                <Link to='/home'>首页</Link>
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>内容管理</Breadcrumb.Item>
+            </Breadcrumb>
+          }
+          style={{ marginBottom: 20 }}
+        >
+          {/* 筛选状态按钮 */}
+          <Form initialValues={{ status: -1 }} onFinish={onFilter}>
+            <Form.Item label='状态' name='status'>
+              <Radio.Group>
+                <Radio value={-1}>全部</Radio>
+                <Radio value={0}>草稿</Radio>
+                <Radio value={1}>待审核</Radio>
+                <Radio value={2}>审核通过</Radio>
+                <Radio value={3}>审核失败</Radio>
+              </Radio.Group>
+            </Form.Item>
+            {/* channels selected option */}
+            <Form.Item label='频道' name='channel_id'>
+              <Channel width={{ width: 300 }} />
+            </Form.Item>
 
-          {/* 日期选择 */}
-          <Form.Item label='日期' name='date'>
-            <RangePicker
-              style={{ width: 300 }}
-              locale={locale}
-              format='YYYY-MM-DD'
-            ></RangePicker>
-          </Form.Item>
-          {/* 提交按钮 */}
-          <Form.Item>
-            <Button type='primary' htmlType='submit'>
-              筛选
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-      {/* table section */}
-      <Card title={`根据筛选条件共查询到 ${count} 条结果：`}>
-        <Table
-          rowKey='id'
-          columns={columns}
-          dataSource={list}
-          pagination={{
-            position: ['bottomLeft'],
-            current: page, //当前页面
-            total: count, //总条数，
-            onChange: changePage //页码变化触发
-          }}
-        />
-      </Card>
+            {/* 日期选择 */}
+            <Form.Item label='日期' name='date'>
+              <RangePicker
+                style={{ width: 300 }}
+                locale={locale}
+                format='YYYY-MM-DD'
+              ></RangePicker>
+            </Form.Item>
+            {/* 提交按钮 */}
+            <Form.Item>
+              <Button type='primary' htmlType='submit'>
+                筛选
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+        {/* table section */}
+        <Card title={`根据筛选条件共查询到 ${count} 条结果：`}>
+          <Table
+            rowKey='id'
+            columns={columns}
+            dataSource={list}
+            pagination={{
+              position: ['bottomLeft'],
+              current: page, //当前页面
+              total: count, //总条数，
+              onChange: changePage //页码变化触发
+            }}
+          />
+        </Card>
+      </Spin>
     </>
   )
 }

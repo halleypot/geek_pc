@@ -7,6 +7,8 @@ import store from '@/store'
 import 'antd/dist/antd.min.css'
 import './index.scss'
 
+console.log(process.env)
+
 const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
   <Provider store={store}>
